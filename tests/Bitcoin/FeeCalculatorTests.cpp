@@ -37,3 +37,27 @@ TEST(BitcoinDefaultFeeCalculator, calculateSingleInput) {
     EXPECT_EQ(defaultFeeCalculator.calculateSingleInput(2), 296);
     EXPECT_EQ(defaultFeeCalculator.calculateSingleInput(10), 1480);
 }
+
+TEST(ZCashFeeCalculator, calculate) {
+    FeeCalculator& feeCalculator = getFeeCalculator(TWCoinTypeZcash);
+    EXPECT_EQ(feeCalculator.calculate(1, 2, 1, 't', 0), 10000);
+    EXPECT_EQ(feeCalculator.calculate(0, 0, 1, 't', 0), 10000);
+    EXPECT_EQ(feeCalculator.calculate(1, 2, 10, 't', 0), 10000);
+    EXPECT_EQ(feeCalculator.calculateSingleInput(1), 0);
+}
+
+TEST(GroestlcoinFeeCalculator, calculate) {
+    FeeCalculator& feeCalculator = getFeeCalculator(TWCoinTypeGroestlcoin);
+    EXPECT_EQ(feeCalculator.calculate(1, 2, 1, 't', 0), 20000);
+    EXPECT_EQ(feeCalculator.calculate(0, 0, 1, 't', 0), 20000);
+    EXPECT_EQ(feeCalculator.calculate(1, 2, 10, 't', 0), 20000);
+    EXPECT_EQ(feeCalculator.calculateSingleInput(1), 0);
+}
+
+TEST(DecredFeeCalculator, calculate) {
+    FeeCalculator& feeCalculator = getFeeCalculator(TWCoinTypeDecred);
+    EXPECT_EQ(feeCalculator.calculate(1, 2, 1, 't', 0), 254);
+    EXPECT_EQ(feeCalculator.calculate(0, 0, 1, 't', 0), 12);
+    EXPECT_EQ(feeCalculator.calculate(1, 2, 10, 't', 0), 2540);
+    EXPECT_EQ(feeCalculator.calculateSingleInput(1), 166);
+}

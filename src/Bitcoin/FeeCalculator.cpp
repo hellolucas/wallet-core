@@ -24,24 +24,14 @@ int64_t DefaultFeeCalculator::calculateSingleInput(int64_t byteFee) const {
 
 class ZCashFeeCalculator : public FeeCalculator {
 public:
-    int64_t calculate(int64_t inputs, int64_t outputs = 2, int64_t byteFee = 1, char prefix = '?', int witnessProgramSize = 0) const override {
-        return 10000;
-    }
-
-    int64_t calculateSingleInput(int64_t byteFee) const override {
-        return 0;
-    }
+    int64_t calculate(int64_t inputs, int64_t outputs = 2, int64_t byteFee = 1, char prefix = '?', int witnessProgramSize = 0) const override { return 10000; }
+    int64_t calculateSingleInput(int64_t byteFee) const override { return 0; }
 };
 
 class GroestlcoinFeeCalculator : public FeeCalculator {
 public:
-    int64_t calculate(int64_t inputs, int64_t outputs = 2, int64_t byteFee = 1, char prefix = '?', int witnessProgramSize = 0) const override {
-        return 20000;
-    }
-
-    int64_t calculateSingleInput(int64_t byteFee) const override {
-        return 0;
-    }
+    int64_t calculate(int64_t inputs, int64_t outputs = 2, int64_t byteFee = 1, char prefix = '?', int witnessProgramSize = 0) const override { return 20000; }
+    int64_t calculateSingleInput(int64_t byteFee) const override { return 0; }
 };
 
 class DecredFeeCalculator : public FeeCalculator {

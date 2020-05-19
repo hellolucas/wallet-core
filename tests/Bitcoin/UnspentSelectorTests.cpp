@@ -192,7 +192,7 @@ TEST(BitcoinUnspentSelector, SelectOneFitsExactly) {
 
     auto& feeCalculator = getFeeCalculator(TWCoinTypeBitcoin);
     auto selector = UnspentSelector(feeCalculator);
-    auto selected = selector.select(utxos, 100'000 - 226, 1); // shuold be 226
+    auto selected = selector.select(utxos, 100'000 - 226, 1);
 
     ASSERT_TRUE(verifySelected(selected, {100'000}));
 
@@ -201,6 +201,26 @@ TEST(BitcoinUnspentSelector, SelectOneFitsExactly) {
 
     // 1 sat more and does not fit any more
     selected = selector.select(utxos, 100'000 - 226 + 1, 1);
+
+    ASSERT_TRUE(verifySelected(selected, {}));
+}
+
+TEST(BitcoinUnspentSelector, SelectOneFitsExactlyHighfee) {
+    auto utxos = std::vector<Proto::UnspentTransaction>();
+    buildUTXOs(utxos, {100'000});
+
+    const auto byteFee = 10;
+    auto& feeCalculator = getFeeCalculator(TWCoinTypeBitcoin);
+    auto selector = UnspentSelector(feeCalculator);
+    auto selected = selector.select(utxos, 100'000 - 2260, byteFee);
+
+    ASSERT_TRUE(verifySelected(selected, {100'000}));
+
+    ASSERT_EQ(feeCalculator.calculate(1, 2, byteFee), 2260);
+    ASSERT_EQ(feeCalculator.calculate(1, 1, byteFee), 1920);
+
+    // 1 sat more and does not fit any more
+    selected = selector.select(utxos, 100'000 - 2260 + 1, byteFee);
 
     ASSERT_TRUE(verifySelected(selected, {}));
 }

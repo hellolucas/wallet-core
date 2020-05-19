@@ -9,7 +9,7 @@
 #include <numeric>
 #include <vector>
 
-#include "UnspentCalculator.h"
+#include "FeeEstimator.h"
 #include "../proto/Bitcoin.pb.h"
 
 namespace TW::Bitcoin {

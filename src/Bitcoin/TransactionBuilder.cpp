@@ -16,9 +16,8 @@ TransactionPlan TransactionBuilder::plan(const Bitcoin::Proto::SigningInput& inp
         plan.amount = input.amount();
 
         auto output_size = 2; // output + change
-        auto calculator =
-            UnspentCalculator::getCalculator(static_cast<TWCoinType>(input.coin_type()));
-        auto unspentSelector = UnspentSelector(calculator);
+        auto& feeCalculator = getFeeCalculator(static_cast<TWCoinType>(input.coin_type()));
+        auto unspentSelector = UnspentSelector(feeCalculator);
         if (input.use_max_amount() && UnspentSelector::sum(input.utxo()) == plan.amount) {
             output_size = 1; // no change
             Amount newAmount = 0;
@@ -26,13 +25,13 @@ TransactionPlan TransactionBuilder::plan(const Bitcoin::Proto::SigningInput& inp
 
             for (auto utxo : input.utxo()) {
                 if (utxo.amount() >
-                    unspentSelector.calculator.calculateSingleInput(input.byte_fee())) {
+                    feeCalculator.calculateSingleInput(input.byte_fee())) {
                     input_size++;
                     newAmount += utxo.amount();
                 }
             }
 
-            plan.amount = newAmount - unspentSelector.calculator.calculate(input_size, output_size,
+            plan.amount = newAmount - feeCalculator.calculate(input_size, output_size,
                                                                            input.byte_fee(), 'T', 0);
             plan.amount = std::max(Amount(0), plan.amount);
         }
@@ -49,7 +48,7 @@ TransactionPlan TransactionBuilder::plan(const Bitcoin::Proto::SigningInput& inp
         plan.availableAmount = UnspentSelector::sum(plan.utxos);
 
         plan.fee = std::min(plan.availableAmount,
-            unspentSelector.calculator.calculate(plan.utxos.size(), output_size, input.byte_fee(), 'Y', witnessSize));
+            feeCalculator.calculate(plan.utxos.size(), output_size, input.byte_fee(), 'Y', witnessSize));
         assert(plan.fee >= 0 && plan.fee <= plan.availableAmount);
         if (input.use_max_amount()) {
             // max_amount case

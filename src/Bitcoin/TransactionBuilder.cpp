@@ -8,6 +8,7 @@
 #include "TransactionSigner.h"
 
 #include <algorithm>
+#include <cassert>
 
 namespace TW::Bitcoin {
 
@@ -31,13 +32,11 @@ TransactionPlan TransactionBuilder::plan(const Bitcoin::Proto::SigningInput& inp
                 }
             }
 
-            plan.amount = newAmount - feeCalculator.calculate(input_size, output_size,
-                                                                           input.byte_fee(), 'T', 0);
+            plan.amount = newAmount - feeCalculator.calculate(input_size, output_size, input.byte_fee(), 'T', 0);
             plan.amount = std::max(Amount(0), plan.amount);
         }
 
-        plan.utxos =
-            unspentSelector.select(input.utxo(), plan.amount, input.byte_fee(), output_size);
+        plan.utxos = unspentSelector.select(input.utxo(), plan.amount, input.byte_fee(), output_size);
 
         //auto plan2 = std::move(plan.proto());
         auto inputWithPlan = std::move(input);
@@ -50,16 +49,16 @@ TransactionPlan TransactionBuilder::plan(const Bitcoin::Proto::SigningInput& inp
         plan.fee = std::min(plan.availableAmount,
             feeCalculator.calculate(plan.utxos.size(), output_size, input.byte_fee(), 'Y', witnessSize));
         assert(plan.fee >= 0 && plan.fee <= plan.availableAmount);
+
         if (input.use_max_amount()) {
             // max_amount case
             plan.amount = std::max(Amount(0), plan.availableAmount - plan.fee);
             assert(plan.amount >= 0 && plan.amount <= plan.availableAmount);
             plan.change = 0;
         } else {
-            if (plan.amount > plan.availableAmount - plan.fee) {
-                plan.amount = std::max(Amount(0), plan.availableAmount - plan.fee);
-            }
-
+            // reduce amount if needed
+            plan.amount = std::max(Amount(0), std::min(plan.amount, plan.availableAmount - plan.fee));
+            assert(plan.amount >= 0 && plan.amount <= plan.availableAmount);
             plan.change = plan.availableAmount - plan.amount - plan.fee;
         }
         assert(plan.amount + plan.change + plan.fee == plan.availableAmount);

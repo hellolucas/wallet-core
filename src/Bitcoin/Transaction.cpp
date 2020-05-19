@@ -117,7 +117,7 @@ void Transaction::encode(bool witness, std::vector<uint8_t>& data) const {
         input.encode(data);
     }
 
-    // rxouts
+    // txouts
     encodeVarInt(outputs.size(), data);
     for (auto& output : outputs) {
         output.encode(data);

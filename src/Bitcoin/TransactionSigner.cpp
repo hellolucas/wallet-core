@@ -22,6 +22,10 @@ using namespace TW::Bitcoin;
 
 template <typename Transaction, typename TransactionBuilder>
 Result<Transaction> TransactionSigner<Transaction, TransactionBuilder>::sign() {
+    if (transaction.inputs.size() == 0 || plan.utxos.size() == 0) {
+        return Result<Transaction>::failure("Missing inputs or UTXOs");
+    }
+
     signedInputs.clear();
     std::copy(std::begin(transaction.inputs), std::end(transaction.inputs),
               std::back_inserter(signedInputs));
@@ -38,9 +42,11 @@ Result<Transaction> TransactionSigner<Transaction, TransactionBuilder>::sign() {
         }
         auto& utxo = plan.utxos[i];
         auto script = Script(utxo.script().begin(), utxo.script().end());
-        auto result = sign(script, i, utxo);
-        if (!result) {
-            return Result<Transaction>::failure(result.error());
+        if (i < transaction.inputs.size()) {
+            auto result = sign(script, i, utxo);
+            if (!result) {
+                return Result<Transaction>::failure(result.error());
+            }
         }
     }
 
@@ -67,9 +73,11 @@ int TransactionSigner<Transaction, TransactionBuilder>::witnessProgramSize(int o
         }
         auto& utxo = input.utxo(i);
         auto script = Script(utxo.script().begin(), utxo.script().end());
-        const auto size1 = witnessProgramSize(script, i, utxo);
-        std::cerr << "   QQQ " << i << " " << utxo.script().size() << " " << size1 << " " << utxo.amount() << "\n";
-        sum += size1;
+        if (i < transaction.inputs.size()) {
+            const auto size1 = witnessProgramSize(script, i, utxo);
+            std::cerr << "   QQQ " << i << " " << utxo.script().size() << " " << size1 << " " << utxo.amount() << "\n";
+            sum += size1;
+        }
     }
     std::cerr << "QQQ witnessProgramSize " << plan.utxos.size() << " res " << sum << "\n";
     return sum;
@@ -239,6 +247,8 @@ int TransactionSigner<Transaction, TransactionBuilder>::signStepSize(const Scrip
 template <typename Transaction, typename TransactionBuilder>
 Result<void> TransactionSigner<Transaction, TransactionBuilder>::sign(Script script, size_t index,
                                                   const Bitcoin::Proto::UnspentTransaction& utxo) {
+    assert(index < transaction.inputs.size());
+
     Script redeemScript;
     std::vector<Data> results;
     std::vector<Data> witnessStack;
@@ -311,7 +321,7 @@ Result<void> TransactionSigner<Transaction, TransactionBuilder>::sign(Script scr
 template <typename Transaction, typename TransactionBuilder>
 Result<std::vector<Data>> TransactionSigner<Transaction, TransactionBuilder>::signStep(
     Script script, size_t index, const Bitcoin::Proto::UnspentTransaction& utxo, uint32_t version) const {
-    std::cerr << "QQQ TransactionSigner::signStep " << script.bytes.size() << " " << hex(script.bytes) << "\n";
+    std::cerr << "QQQ TransactionSigner::signStep index " << index << " plan " << plan.utxos.size() << " signedInputs " << signedInputs.size() << " " << script.bytes.size() << " " << hex(script.bytes) << "\n";
     Transaction transactionToSign(transaction);
     transactionToSign.inputs = signedInputs;
     transactionToSign.outputs = transaction.outputs;
